@@ -30,7 +30,7 @@ export default function LoginForm() {
 
     const router = useRouter();
     
-    //O Token é perdido toda vez que a página é carregada novamente
+    //O Token + User ID é perdido toda vez que a página é carregada novamente
     useEffect(() => {
         Cookies.remove("token");
         Cookies.remove("user_id");
@@ -90,7 +90,7 @@ export default function LoginForm() {
                 const responseJson = await response.json();
                 Cookies.set("token", responseJson.token);
                 Cookies.set("user_id", responseJson.id);
-                router.push("profile");
+                router.push("/profile");
             } else {
                 setSnackbarMessage("Erro ao registrar usuário!");
                 setSnackbarSeverity("error");

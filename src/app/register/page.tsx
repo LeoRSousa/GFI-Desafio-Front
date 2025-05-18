@@ -32,7 +32,7 @@ export default function RegisterForm() {
         validateForm();
     }, [email, password, confirm]);
 
-    //O Token é perdido toda vez que a página é carregada novamente
+    //O Token + User ID é perdido toda vez que a página é carregada novamente
     useEffect(() => {
         Cookies.remove("token");
         Cookies.remove("user_id");

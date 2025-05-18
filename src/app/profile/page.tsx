@@ -3,12 +3,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Cookies from 'js-cookie';
 import NavBarHeader from "../ui/navBarHeader";
-import { Box, Button, Divider, Paper, Skeleton, Typography } from "@mui/material";
+import { Button, Divider, Skeleton, Typography } from "@mui/material";
 import GeneralBody from "../ui/generalBody";
-import TableExample from "../examples/tableExample";
 import { User } from "../customTypes/User";
 import ProfileCards from "../ui/profileCards";
 import GeneralTitle from "../ui/generalTitle";
+import InvestmentTable from "../ui/investmentTable";
+import InvestmentChart from "../ui/investmentChart";
 
 export default function Profile() {
     const router = useRouter();
@@ -34,14 +35,13 @@ export default function Profile() {
             const response = await fetch(`http://localhost:8080/user/${user_id}`, requestOptions);
             const userJson: User = await response.json();
             setUser(userJson);
-            console.log(`user usestate: ${user}`);
         };
 
         fetchUser();
     }, []);
 
     const emptyInvestments = () => {
-        return(
+        return (
             <div>
                 <Typography variant="h6">Parece que não há investimentos</Typography>
                 <Button variant="text" color="secondary" onClick={() => {
@@ -68,17 +68,22 @@ export default function Profile() {
                     <ProfileCards>
                         {user?.investments.length === 0
                             ? emptyInvestments()
-                            : <TableExample />
+                            : <div>
+                                <InvestmentTable investments={user?.investments || []}/>
+                                <Button variant="text" color="secondary" onClick={() => {
+                                    router.push("/profile/investment/new");
+                                }}>Criar investimento</Button>
+                            </div>
                         }
                     </ProfileCards>
                 </div>
-                <Divider sx={{ my: 4 }}/>
+                <Divider sx={{ my: 4 }} />
                 <div id="investment-chart">
-                    <GeneralTitle>GRÁFICO</GeneralTitle>
+                    <GeneralTitle>GRÁFICO DE INVESTIMENTOS POR TIPOS</GeneralTitle>
                     <ProfileCards>
                         {user?.investments.length === 0
                             ? emptyInvestments()
-                            : <p>gráfico de investimentos</p>
+                            : <InvestmentChart investments={user?.investments}/>
                         }
                     </ProfileCards>
                 </div>

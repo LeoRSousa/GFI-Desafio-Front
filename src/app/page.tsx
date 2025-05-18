@@ -1,8 +1,16 @@
+'use client';
 import { Button } from "@mui/material";
-import Image from "next/image";
 import Link from "next/link";
+import Cookies from 'js-cookie';
+import { useEffect } from "react";
 
 export default function Home() {
+  //O Token + User ID é perdido toda vez que a página é carregada novamente
+  useEffect(() => {
+    Cookies.remove('token');
+    Cookies.remove("user_id");
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-md space-y-8 text-center">

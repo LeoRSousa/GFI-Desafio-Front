@@ -4,13 +4,15 @@ import GeneralBody from "@/app/ui/generalBody";
 import GeneralTitle from "@/app/ui/generalTitle";
 import NavBarHeader from "@/app/ui/navBarHeader";
 import ProfileCards from "@/app/ui/profileCards";
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormLabel, Menu, MenuItem, Radio, RadioGroup, Snackbar, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormLabel, Menu, MenuItem, Radio, RadioGroup, Skeleton, Snackbar, TextField, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import Cookies from 'js-cookie';
 import { useRouter } from "next/navigation";
 
 export default function NewInvestment() {
     const router = useRouter();
+    const [token, setToken] = useState<string | undefined>(undefined);
+    const [userId, setUserId] = useState<string | undefined>(undefined);
 
     const [investmentName, setInvestmentName] = useState("");
     const [investmentType, setInvestmentType] = useState<"STOCK" | "FUND" | "BOND">("STOCK");
@@ -20,7 +22,7 @@ export default function NewInvestment() {
     const [errors, setErrors] = useState({
         investmentName: "",
         investmentValue: "",
-        investmentStartDate
+        investmentStartDate: ""
     });
 
     const [canSubmit, setCanSubmit] = useState(false);
@@ -33,6 +35,11 @@ export default function NewInvestment() {
     useEffect(() => {
         validateForm();
     }, [investmentName, investmentValue, investmentStartDate]);
+
+    useEffect(() => {
+        setToken(Cookies.get("token"));
+        setUserId(Cookies.get("user_id"));
+    }, []);
 
     const validateForm = () => {
         const newErrors = {
@@ -59,7 +66,7 @@ export default function NewInvestment() {
             const selectedDate = new Date(investmentStartDate);
             selectedDate.setHours(0, 0, 0, 0);
 
-            console.log(`1: ${today}, 2: ${selectedDate}`);
+            //console.log(`1: ${today}, 2: ${selectedDate}`);
 
             if (selectedDate >= today) {
                 newErrors.investmentStartDate = "A data não pode estar no futuro";
@@ -77,9 +84,6 @@ export default function NewInvestment() {
         e.preventDefault();
         //console.log(`Nome: ${investmentName} | Tipo: ${investmentType} | Valor: ${investmentValue} | Data: ${investmentStartDate}`);
         try {
-            const token = Cookies.get("token");
-            const user_id = Cookies.get("user_id");
-
             const myHeaders = new Headers();
             myHeaders.append("Content-Type", "application/json");
             myHeaders.append("Authorization", `Bearer ${token}`);
@@ -87,9 +91,9 @@ export default function NewInvestment() {
             const raw = JSON.stringify({
                 "name": investmentName,
                 "type": investmentType,
-                "value": investmentType,
+                "value": investmentValue,
                 "startDate": investmentStartDate,
-                "userId": user_id
+                "userId": userId
             });
 
             const requestOptions = {
@@ -101,6 +105,8 @@ export default function NewInvestment() {
             const response = await fetch("http://localhost:8080/investments/create", requestOptions);
 
             if (response.status === 201) {
+                setSnackbarMessage("Investimento registrado com sucesso!");
+                setSnackbarSeverity("success");
                 setSuccess(true);
             } else {
                 setSnackbarMessage("Erro ao registrar o investimento! Certifique-se de que não exista um investimento com este nome.");
@@ -113,7 +119,13 @@ export default function NewInvestment() {
         setSnackbarOpen(true);
     }
 
+    const handleCloseSnackbar = () => {
+        setSnackbarMessage("");
+        setSnackbarOpen(false);
+    }
+
     const handlePlusOne = () => {
+        setSuccess(false);
         router.push("/profile/investment/new");
     }
 
@@ -121,10 +133,22 @@ export default function NewInvestment() {
         router.push("/profile");
     }
 
-    return (
-        <div>
-            <NavBarHeader />
-            <GeneralBody>
+    const handleRender = () => {
+        if (!token) {
+            return (
+                <>
+                    <Alert severity="warning" sx={{ mt: 4 }}>
+                        Sua sessão pode ter expirado ou você não está autenticado.
+                    </Alert>
+
+                    <Skeleton variant="text" width={200} height={40} />
+                    <Skeleton variant="rectangular" height={100} sx={{ my: 2 }} />
+                    <Skeleton variant="text" width={150} height={30} />
+                    <Skeleton variant="rectangular" height={200} sx={{ my: 2 }} />
+                </>
+            );
+        } else {
+            return (
                 <div>
                     <GeneralTitle>CRIAR INVESTIMENTO</GeneralTitle>
                     <div>
@@ -200,26 +224,34 @@ export default function NewInvestment() {
                                 <Alert severity="warning">Preencha corretamente os campos para continuar. </Alert>
                             )}
 
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                type="submit"
-                                disabled={!canSubmit}
-                                onClick={handleSubmit}
-                            >
-                                Criar
-                            </Button>
-
+                            <Box display="flex" justifyContent="center" gap={2}>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    type="submit"
+                                    disabled={!canSubmit}
+                                    onClick={handleSubmit}
+                                >
+                                    Criar
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="error"
+                                    type="button"
+                                    onClick={handleExit}
+                                >
+                                    Voltar
+                                </Button>
+                            </Box>
 
                         </Box>
-
 
                         <Snackbar
                             open={snackbarOpen}
                             onClose={() => setSnackbarOpen(false)}
                             autoHideDuration={null}
                             action={
-                                <Button color="inherit" size="small" onClick={() => setSnackbarOpen(false)}>
+                                <Button color="inherit" size="small" onClick={handleCloseSnackbar}>
                                     FECHAR
                                 </Button>
                             }
@@ -237,20 +269,30 @@ export default function NewInvestment() {
 
                     <Dialog
                         open={success}
-                        onClose={() => {}}
+                        onClose={() => { }}
                     >
                         <DialogTitle>Investimento Criado</DialogTitle>
                         <DialogContent>
-                            <DialogContentText>Seu investimento foi criado! Você pode criar outro ou voltar ao seu perfil</DialogContentText>
+                            <DialogContentText>Seu investimento foi criado!</DialogContentText>
+                            <DialogContentText>Você pode criar outro ou voltar ao seu perfil.</DialogContentText>
                         </DialogContent>
                         <DialogActions>
-                            <Button variant="text" color="secondary" onClick={handlePlusOne}></Button>
-                            <Button variant="text" color="secondary" onClick={handleExit}></Button>
+                            <Button variant="text" color="secondary" onClick={handlePlusOne}>Criar outro</Button>
+                            <Button variant="text" color="secondary" onClick={handleExit}>Voltar ao perfil</Button>
                         </DialogActions>
                     </Dialog>
 
                 </div>
-            </GeneralBody>
-        </div>
+            );
+        }
+    }
+
+    return (
+        <div>
+            <NavBarHeader />
+            <GeneralBody>
+                {handleRender()}
+            </GeneralBody >
+        </div >
     );
 }

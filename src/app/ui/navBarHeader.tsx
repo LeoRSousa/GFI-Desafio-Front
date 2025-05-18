@@ -20,7 +20,7 @@ export default function NavBarHeader() {
   };
 
   const handleGoToProfile = () => {
-    router.push('/profile');
+    router.replace('/profile');
   };
 
   return (
